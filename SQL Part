@@ -1,0 +1,103 @@
+## **Data Insight "The Professionalization Gap"**
+
+**Data Insight "The Professionalization Gap"**
+The data reveals a significant disparity between **Entire homes/apartments** and other room types. 
+While the global count for apartments is massive ($98,333$), 
+the high concentration in specific cities like London or Rome suggests a "professional host" dominance.
+These cities act as primary hubs, where a single room type dictates the market's liquidity and pricing power,
+moving Airbnb away from its original "shared room" concept toward a standardized short-term rental industry.
+
+```sql
+   SELECT 
+    city, 
+    room_type,
+    COUNT(*) AS listings_count,
+    SUM(COUNT(*)) OVER(PARTITION BY room_type) AS global_type_count,
+  SUM(number_of_reviews) AS total_reviews_in_city,
+    ROUND(AVG(minimum_nights), 2) AS avg_min_nights
+FROM airbnb_final af
+GROUP BY city, room_type
+ORDER BY city, listings_count DESC;
+    
+```
+
+## **"The Scarcity Premium""**
+
+The data shows an inverse correlation between supply volume and review intensity. 
+In markets like **Amsterdam**, strict regulations and limited supply for specific categories (Hotels and Private Rooms)
+create a "bottleneck effect," where a tiny number of listings absorb a massive amount of traveler demand.
+Meanwhile, the saturated **Entire home/apt** markets in Rome and Barcelona show steady but significantly lower individual listing performance,
+indicating that high supply naturally dilutes the "per-listing" activity level.
+
+```sql
+SELECT 
+    city, 
+    room_type,
+    COUNT(*) AS listings_count,
+    SUM(number_of_reviews) AS total_reviews_in_city,
+    -- Рассчитываем среднее кол-во отзывов на одно объявление
+    ROUND(SUM(number_of_reviews)::numeric / COUNT(*), 2) AS review_intensity,
+    -- Глобальный контекст для типа жилья
+    SUM(COUNT(*)) OVER(PARTITION BY room_type) AS global_type_count
+FROM airbnb_final af
+GROUP BY city, room_type
+
+ORDER BY review_intensity DESC;
+```
+
+
+
+
+## **The Global Profit Leaders**
+
+ **"The Revenue Duality"**
+ Your analysis reveals two distinct paths to high revenue in the short-term rental market. 
+The **"Luxury Path"** (seen in Bangkok) relies on high margins per stay, even if the assets aren't constantly occupied.
+The **"Efficiency Path"** (seen in Amsterdam) relies on extreme volume and turnover.
+Interestingly, "Shared rooms" in almost every city sit at the bottom of the index,
+proving that while they might be "active," they are the least economically efficient use of space compared to professionalized hotel rooms or entire apartments. 
+
+
+
+### Investment Strategy Summary: The Efficiency Play
+
+```sql
+SELECT 
+    city, 
+    room_type,
+    COUNT(*) AS listings_count,
+    ROUND(AVG(price), 2) AS avg_price,
+    ROUND(SUM(number_of_reviews)::numeric / COUNT(*), 2) AS review_intensity,
+    ROUND((AVG(price) * (SUM(number_of_reviews)::numeric / COUNT(*)))::numeric, 2) AS estimated_revenue_index
+FROM airbnb_final af
+GROUP BY city, room_type
+HAVING COUNT(*) > 5 
+ORDER BY estimated_revenue_index DESC
+
+
+
+
+### Investment Strategy Summary: The Efficiency Play
+
+```sql
+SELECT 
+    city, 
+    room_type,
+    COUNT(*) AS total_listings,
+    ROUND(AVG(price)::numeric, 2) AS avg_nightly_price,
+    ROUND(SUM(number_of_reviews)::numeric / COUNT(*), 2) AS occupancy_proxy,
+    ROUND((AVG(price) * (SUM(number_of_reviews)::numeric / COUNT(*)))::numeric, 2) AS revenue_index
+FROM airbnb_final
+WHERE city IN ('Amsterdam', 'Rome') 
+  AND room_type = 'Private room'
+GROUP BY city, room_type;
+```
+
+Our SQL analysis revealed a clear winner for "smart" investing: **The Micro-Unit Model**.
+
+- **The Amsterdam Phenomenon:** With a `review_intensity` of **195.49**, private rooms in Amsterdam are the ultimate cash cows.
+The high turnover compensates for the lower price point compared to luxury villas, leading to a massive `revenue_index` of **32,690**.
+- **The Rome Stability:** Rome offers a safer, more voluminous market (**7,240** listings). 
+It's the perfect secondary location for a "dense" rental strategy where the goal is consistent, year-round booking.
+- **The Maintenance Trade-off:** High density equals high wear and tear.
+While the income is superior, the operational cost (utilities and repairs) will be significantly higher than in a single luxury unit.
